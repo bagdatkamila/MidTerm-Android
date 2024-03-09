@@ -2,6 +2,7 @@ package com.example.aviatickets.adapter
 
 import android.view.LayoutInflater
 import android.view.ViewGroup
+import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import com.example.aviatickets.R
 import com.example.aviatickets.databinding.ItemOfferBinding
@@ -11,14 +12,25 @@ class OfferListAdapter : RecyclerView.Adapter<OfferListAdapter.ViewHolder>() {
 
     private val items: ArrayList<Offer> = arrayListOf()
 
+//    private class OfferDiffCallback : DiffUtil.ItemCallback<Offer>() {
+//        override fun areItemsTheSame(oldItem: Offer, newItem: Offer): Boolean {
+//            return oldItem.id == newItem.id
+//        }
+//
+//        override fun areContentsTheSame(oldItem: Offer, newItem: Offer): Boolean {
+//            return oldItem == newItem
+//        }
+//    }
     fun setItems(offerList: List<Offer>) {
+        val diffResult = calculateDiff(offerList)
         items.clear()
         items.addAll(offerList)
-        notifyDataSetChanged()
+        diffResult.dispatchUpdatesTo(this)
+    }
 
-        /**
-         * think about recycler view optimization using diff.util
-         */
+    private fun calculateDiff(newList: List<Offer>): DiffUtil.DiffResult {
+        val diffCallback = OfferDiffCallback(items, newList)
+        return DiffUtil.calculateDiff(diffCallback)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -71,5 +83,23 @@ class OfferListAdapter : RecyclerView.Adapter<OfferListAdapter.ViewHolder>() {
             second = minutes % 60
         )
 
+    }
+
+    private class OfferDiffCallback(
+        private val oldList: List<Offer>,
+        private val newList: List<Offer>
+    ) : DiffUtil.Callback() {
+
+        override fun getOldListSize(): Int = oldList.size
+
+        override fun getNewListSize(): Int = newList.size
+
+        override fun areItemsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {
+            return oldList[oldItemPosition].id == newList[newItemPosition].id
+        }
+
+        override fun areContentsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {
+            return oldList[oldItemPosition] == newList[newItemPosition]
+        }
     }
 }

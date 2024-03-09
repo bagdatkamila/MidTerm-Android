@@ -8,7 +8,12 @@ import android.view.ViewGroup
 import com.example.aviatickets.R
 import com.example.aviatickets.adapter.OfferListAdapter
 import com.example.aviatickets.databinding.FragmentOfferListBinding
+import com.example.aviatickets.model.entity.Offer
+import com.example.aviatickets.model.network.ApiClient
 import com.example.aviatickets.model.service.FakeService
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 
 
 class OfferListFragment : Fragment() {
@@ -37,8 +42,46 @@ class OfferListFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         setupUI()
-        adapter.setItems(FakeService.offerList)
+//        adapter?.setItems(FakeService.offerList)
+
+        val client = ApiClient.instance
+        val response = client.fetchOfferList()
+
+        response.enqueue(object : Callback<List<Offer>>{
+            override fun onResponse(call: Call<List<Offer>>, response: Response<List<Offer>>) {
+                val apiOfferList = response.body()
+                println("API request:" + apiOfferList)
+                if(apiOfferList != null){
+                    adapter.setItems(apiOfferList)
+                }
+                else{
+                    println("Error: ${response.code()} - ${response.message()}")
+                }
+            }
+            override fun onFailure(call: Call<List<Offer>>, t: Throwable) {
+                println("HttpResponse: ${t.message}")
+            }
+        })
+
     }
+
+//    private fun fetchOfferList(): LiveData<List<Offer>> {
+//        val offers = MutableLiveData<List<Offer>>()
+//        ApiClient.enqueue(object :
+//            WindowInsetsAnimation.Callback<List<Offer>> {
+//            override fun onResponse(call: Call<List<Offer>>, response: Response<List<Offer>>) {
+//                if (response.isSuccessful) {
+//                    offers.value = response.body()
+//                }
+//            }
+//
+//            override fun onFailure(call: Call<List<Offer>>, t: Throwable) {
+//                // Handle error
+//            }
+//        })
+//        return offers
+//    }
+
 
     private fun setupUI() {
         with(binding) {
@@ -50,12 +93,20 @@ class OfferListFragment : Fragment() {
                         /**
                          * implement sorting by price
                          */
+//                        fetchOfferList().observe(viewLifecycleOwner, Observer { offers ->
+//                            offers?.sortedBy { it.price }?.let { submitOfferList(it) }
+//                        }
+                        val sortedList = FakeService.offerList.sortedBy { it.flight.duration }
+                        adapter.setItems(sortedList)
                     }
 
                     R.id.sort_by_duration -> {
                         /**
                          * implement sorting by duration
                          */
+                        adapter.setItems(
+                            FakeService.offerList.sortedBy { it.flight.duration }
+                        )
                     }
                 }
             }
